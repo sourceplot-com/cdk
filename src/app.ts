@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import * as cdk from "aws-cdk-lib";
 import { PipelineStack } from "./pipeline";
 import { AWS_ACCOUNT_ID } from "./configuration/account";
