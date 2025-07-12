@@ -66,7 +66,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 						"-c",
 						["./gradlew shadowJar", "cp build/libs/github-data-extractor-all.jar /asset-output/", "ls -la /asset-output/"].join(" && ")
 					],
-					outputType: cdk.BundlingOutput.ARCHIVED
+					outputType: cdk.BundlingOutput.NOT_ARCHIVED
 				}
 			}),
 			environment: {
