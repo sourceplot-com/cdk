@@ -72,15 +72,15 @@ export class GithubDataExtractorStack extends cdk.Stack {
 							"git clone https://github.com/sourceplot-com/github-data-extractor.git /tmp/source",
 							"cd /tmp/source",
 
-							"./gradlew clean fatJar -x test --info",
+							"./gradlew clean shadowJar -x test --info",
 
 							"echo 'Searching for JAR files...'",
 							"find . -name '*.jar' -type f -ls",
 
-							"JAR_FILE=$(find . -name 'github-data-extractor.jar' -type f | head -1)",
+							"JAR_FILE=$(find . -name 'github-data-extractor-all.jar' -type f | head -1)",
 							"echo 'Found JAR file: $JAR_FILE'",
 
-							"if [ -n \"$JAR_FILE\" ]; then cp \"$JAR_FILE\" /asset-output/ && chmod 644 /asset-output/github-data-extractor.jar && echo 'JAR file copied successfully'; else echo 'ERROR: No JAR file found!' && exit 1; fi",
+							"if [ -n \"$JAR_FILE\" ]; then cp \"$JAR_FILE\" /asset-output/ && chmod 644 /asset-output/github-data-extractor-all.jar && echo 'JAR file copied successfully'; else echo 'ERROR: No JAR file found!' && exit 1; fi",
 
 							"echo 'Final contents of /asset-output:'",
 							"ls -la /asset-output/",
