@@ -71,14 +71,11 @@ export class GithubDataExtractorStack extends cdk.Stack {
 							"ls -la",
 
 							"echo 'Running Gradle build...'",
-							"./gradlew clean build -x test --info",
+							"./gradlew clean fatJar -x test --info",
 
-							"echo 'Build completed. Checking for JAR files...'",
-							"find . -name 'app.jar' -type f",
-
-							"echo 'Copying JAR file...'",
+							"echo 'Build completed. Copying JAR file...'",
 							"mkdir -p /asset-output",
-							"find . -name 'app.jar' -type f -exec cp {} /asset-output/ \\;",
+							"cp ./build/libs/github-data-extractor.jar /asset-output/",
 
 							"echo 'Contents of /asset-output:'",
 							"ls -la /asset-output/",
