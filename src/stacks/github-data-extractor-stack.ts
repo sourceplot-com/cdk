@@ -4,6 +4,9 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import { Construct } from "constructs";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import path from "path";
+import { execFileSync } from "child_process";
+import { mkdtempSync } from "fs";
 
 export class GithubDataExtractorStack extends cdk.Stack {
 	readonly repositoryQueue: sqs.Queue;
@@ -48,45 +51,17 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			removalPolicy: cdk.RemovalPolicy.RETAIN
 		});
 
+		const tmpDir = mkdtempSync("sourceplot-lambda-code");
+		const dataExtractorDir = path.join(tmpDir, "github-data-extractor");
+		execFileSync("git", ["clone", "https://github.com/sourceplot-com/github-data-extractor.git", dataExtractorDir]);
+
 		this.extractorLambda = new lambda.Function(this, "ExtractorLambda", {
 			runtime: lambda.Runtime.JAVA_21,
 			handler: "com.sourceplot.handler.RepositoryQueueHandler",
-			code: lambda.Code.fromAsset(".", {
+			code: lambda.Code.fromAsset(dataExtractorDir, {
 				bundling: {
 					image: lambda.Runtime.JAVA_21.bundlingImage,
-					command: [
-						"/bin/bash",
-						"-c",
-						[
-							"set -e",
-							"echo 'Starting bundling process...'",
-							"echo 'Current user: $(whoami)'",
-							"echo 'Current uid: $(id -u)'",
-
-							"microdnf update -y && microdnf install -y git",
-							"echo 'Git installed successfully'",
-
-							"mkdir -p /asset-output",
-							"chmod 777 /asset-output",
-
-							"git clone https://github.com/sourceplot-com/github-data-extractor.git /tmp/source",
-							"cd /tmp/source",
-
-							"./gradlew clean shadowJar -x test --info",
-
-							"echo 'Searching for JAR files...'",
-							"find . -name '*.jar' -type f -ls",
-
-							"JAR_FILE=$(find . -name 'github-data-extractor-all.jar' -type f | head -1)",
-							"echo 'Found JAR file: $JAR_FILE'",
-
-							"if [ -n \"$JAR_FILE\" ]; then cp \"$JAR_FILE\" /asset-output/ && chmod 644 /asset-output/github-data-extractor-all.jar && echo 'JAR file copied successfully'; else echo 'ERROR: No JAR file found!' && exit 1; fi",
-
-							"echo 'Final contents of /asset-output:'",
-							"ls -la /asset-output/",
-							"echo 'Bundling process completed'"
-						].join(" && ")
-					],
+					command: ["/bin/bash", "-c", ["./gradlew shadowJar", "cp build/libs/github-data-extractor-all.jar /asset-output/"].join(" && ")],
 					outputType: cdk.BundlingOutput.ARCHIVED,
 					user: "root"
 				}
@@ -108,5 +83,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		this.repositoryQueue.grantConsumeMessages(this.extractorLambda);
 		this.repositoryLanguageStatsTable.grantReadWriteData(this.extractorLambda);
 		this.dailyLanguageStatsTable.grantReadWriteData(this.extractorLambda);
+
+		execFileSync("rm", ["-rf", tmpDir]);
 	}
 }
