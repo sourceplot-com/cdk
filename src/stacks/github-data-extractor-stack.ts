@@ -58,11 +58,32 @@ export class GithubDataExtractorStack extends cdk.Stack {
 						"/bin/bash",
 						"-c",
 						[
+							"echo 'Starting bundling process...'",
+
 							"microdnf update -y && microdnf install -y git",
+							"echo 'Git installed successfully'",
+
 							"git clone https://github.com/sourceplot-com/github-data-extractor.git /tmp/source",
+							"echo 'Repository cloned successfully'",
+
 							"cd /tmp/source",
-							"./gradlew clean build -x test",
-							"cp app/build/libs/app.jar /asset-output/"
+							"echo 'Changed to source directory'",
+							"ls -la",
+
+							"echo 'Running Gradle build...'",
+							"./gradlew clean build -x test --info",
+
+							"echo 'Build completed. Checking for JAR files...'",
+							"find . -name 'app.jar' -type f",
+
+							"echo 'Copying JAR file...'",
+							"mkdir -p /asset-output",
+							"find . -name 'app.jar' -type f -exec cp {} /asset-output/ \\;",
+
+							"echo 'Contents of /asset-output:'",
+							"ls -la /asset-output/",
+
+							"echo 'Bundling process completed'"
 						].join(" && ")
 					],
 					outputType: cdk.BundlingOutput.ARCHIVED,
