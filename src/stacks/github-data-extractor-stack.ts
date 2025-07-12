@@ -61,9 +61,12 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			code: lambda.Code.fromAsset(dataExtractorDir, {
 				bundling: {
 					image: lambda.Runtime.JAVA_21.bundlingImage,
-					command: ["/bin/bash", "-c", ["./gradlew shadowJar", "cp build/libs/github-data-extractor-all.jar /asset-output/"].join(" && ")],
-					outputType: cdk.BundlingOutput.ARCHIVED,
-					user: "root"
+					command: [
+						"/bin/bash",
+						"-c",
+						["./gradlew shadowJar", "cp build/libs/github-data-extractor-all.jar /asset-output/", "ls -la /asset-output/"].join(" && ")
+					],
+					outputType: cdk.BundlingOutput.ARCHIVED
 				}
 			}),
 			environment: {
