@@ -83,7 +83,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 							"echo 'Bundling process completed'"
 						].join(" && ")
 					],
-					outputType: cdk.BundlingOutput.ARCHIVED,
+					outputType: cdk.BundlingOutput.SINGLE_FILE,
 					user: "root"
 				}
 			}),
