@@ -58,32 +58,36 @@ export class GithubDataExtractorStack extends cdk.Stack {
 						"/bin/bash",
 						"-c",
 						[
+							"set -e",
 							"echo 'Starting bundling process...'",
+							"echo 'Current user: $(whoami)'",
+							"echo 'Current uid: $(id -u)'",
 
 							"microdnf update -y && microdnf install -y git",
 							"echo 'Git installed successfully'",
 
+							"mkdir -p /asset-output",
+							"chmod 777 /asset-output",
+
 							"git clone https://github.com/sourceplot-com/github-data-extractor.git /tmp/source",
-							"echo 'Repository cloned successfully'",
-
 							"cd /tmp/source",
-							"echo 'Changed to source directory'",
-							"ls -la",
 
-							"echo 'Running Gradle build...'",
 							"./gradlew clean fatJar -x test --info",
 
-							"echo 'Build completed. Copying JAR file...'",
-							"mkdir -p /asset-output",
-							"cp ./build/libs/github-data-extractor.jar /asset-output/",
+							"echo 'Searching for JAR files...'",
+							"find . -name '*.jar' -type f -ls",
 
-							"echo 'Contents of /asset-output:'",
+							"JAR_FILE=$(find . -name 'github-data-extractor.jar' -type f | head -1)",
+							"echo 'Found JAR file: $JAR_FILE'",
+
+							"if [ -n \"$JAR_FILE\" ]; then cp \"$JAR_FILE\" /asset-output/ && chmod 644 /asset-output/github-data-extractor.jar && echo 'JAR file copied successfully'; else echo 'ERROR: No JAR file found!' && exit 1; fi",
+
+							"echo 'Final contents of /asset-output:'",
 							"ls -la /asset-output/",
-
 							"echo 'Bundling process completed'"
 						].join(" && ")
 					],
-					outputType: cdk.BundlingOutput.SINGLE_FILE,
+					outputType: cdk.BundlingOutput.ARCHIVED,
 					user: "root"
 				}
 			}),
