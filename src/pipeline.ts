@@ -30,6 +30,7 @@ export class PipelineStack extends cdk.Stack {
 
 		return new pipelines.CodePipeline(this, "Pipeline", {
 			dockerEnabledForSynth: true,
+			usePipelineRoleForActions: true,
 			pipelineName: "sourceplot-pipeline",
 			synth,
 			codeBuildDefaults: {
