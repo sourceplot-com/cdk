@@ -24,13 +24,12 @@ export class PipelineStack extends cdk.Stack {
 			input: pipelines.CodePipelineSource.connection("sourceplot-com/cdk", "main", {
 				connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
 			}),
-			commands: ["npm ci", "npm run build", "npm run cdk synth"],
+			commands: ["npm ci", "npm run build", "npx cdk synth"],
 			primaryOutputDirectory: "cdk.out"
 		});
 
 		return new pipelines.CodePipeline(this, "Pipeline", {
 			dockerEnabledForSynth: true,
-			dockerEnabledForSelfMutation: true,
 			pipelineName: "sourceplot-pipeline",
 			synth,
 			codeBuildDefaults: {
@@ -55,10 +54,10 @@ export class PipelineStack extends cdk.Stack {
 			environment.stacks.forEach((stack) => {
 				switch (stack) {
 					case Stack.GITHUB_DATA_EXTRACTOR:
-						new GithubDataExtractorStack(pipelineStage, `Sourceplot-${stack}Stack`);
+						new GithubDataExtractorStack(pipelineStage, `Sourceplot${stack}Stack`);
 						break;
 					case Stack.WEBSITE:
-						new WebsiteStack(pipelineStage, `Sourceplot-${stack}Stack`);
+						new WebsiteStack(pipelineStage, `Sourceplot${stack}Stack`);
 						break;
 				}
 			});
