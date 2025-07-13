@@ -25,7 +25,10 @@ export class PipelineStack extends cdk.Stack {
 				connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
 			}),
 			commands: ["npm ci", "npm run build", "npx cdk synth"],
-			primaryOutputDirectory: "cdk.out"
+			primaryOutputDirectory: "cdk.out",
+			env: {
+				DOCKER_BUILDKIT: "1"
+			}
 		});
 
 		return new pipelines.CodePipeline(this, "Pipeline", {
@@ -36,7 +39,8 @@ export class PipelineStack extends cdk.Stack {
 			codeBuildDefaults: {
 				buildEnvironment: {
 					buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
-					computeType: codebuild.ComputeType.SMALL
+					computeType: codebuild.ComputeType.SMALL,
+					privileged: true
 				}
 			}
 		});
