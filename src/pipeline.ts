@@ -24,7 +24,7 @@ export class PipelineStack extends cdk.Stack {
 			input: pipelines.CodePipelineSource.connection("sourceplot-com/cdk", "main", {
 				connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
 			}),
-			commands: ["pwd", "ls -la", "npm ci", "npm run build", "npm run cdk synth --verbose", "ls -la", "ls -la cdk.out"],
+			commands: ["npm ci", "npm run build", "npm run cdk synth"],
 			primaryOutputDirectory: "cdk.out",
 			env: {
 				DOCKER_BUILDKIT: "1"
@@ -38,7 +38,7 @@ export class PipelineStack extends cdk.Stack {
 			synth,
 			codeBuildDefaults: {
 				buildEnvironment: {
-					buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
+					buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2023_5,
 					computeType: codebuild.ComputeType.SMALL,
 					privileged: true
 				}
