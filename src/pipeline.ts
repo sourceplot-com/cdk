@@ -24,7 +24,7 @@ export class PipelineStack extends cdk.Stack {
 			input: pipelines.CodePipelineSource.connection("sourceplot-com/cdk", "main", {
 				connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
 			}),
-			commands: ["npm ci", "npm run build", "npx cdk synth"],
+			commands: ["npm ci", "npm run build", "npx cdk synth", "ls -la", "ls -la cdk.out"],
 			primaryOutputDirectory: "cdk.out",
 			env: {
 				DOCKER_BUILDKIT: "1"
