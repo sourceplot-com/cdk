@@ -15,6 +15,7 @@ export const PIPELINE_STAGES: Partial<Record<Stage, StageEnvironment>> = {
 		accountId: AWS_ACCOUNT_ID,
 		region: AwsRegion.US_EAST_1,
 		stage: Stage.PROD,
-		stacks: [Stack.GITHUB_DATA_EXTRACTOR, Stack.WEBSITE]
+		// stacks: [Stack.GITHUB_DATA_EXTRACTOR, Stack.WEBSITE]
+		stacks: [Stack.WEBSITE]
 	}
 };
