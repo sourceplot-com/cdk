@@ -31,10 +31,10 @@ export class PipelineStack extends cdk.Stack {
 				DOCKER_BUILDKIT: "1"
 			},
 			additionalInputs: {
-				"/tmp/lambda-src/activeRepoExtractorLambda": pipelines.CodePipelineSource.connection("sourceplot-com/active-repo-extractor-lambda", "main", {
+				"lambda-src/active-repo-extractor": pipelines.CodePipelineSource.connection("sourceplot-com/active-repo-extractor-lambda", "main", {
 					connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
 				}),
-				"/tmp/lambda-src/repoAnalyzerLambda": pipelines.CodePipelineSource.connection("sourceplot-com/repo-analyzer-lambda", "main", {
+				"lambda-src/repo-analyzer": pipelines.CodePipelineSource.connection("sourceplot-com/repo-analyzer-lambda", "main", {
 					connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
 				})
 			}

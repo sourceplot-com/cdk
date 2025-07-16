@@ -58,7 +58,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			removalPolicy: cdk.RemovalPolicy.RETAIN
 		});
 
-		const activeRepoExtractorDir = "/tmp/lambda-src/active-repo-extractor";
+		const activeRepoExtractorDir = "lambda-src/active-repo-extractor";
 		if (process.env.NODE_ENV !== "production") {
 			execFileSync("rm", ["-rf", activeRepoExtractorDir]);
 			mkdirSync(activeRepoExtractorDir, { recursive: true });
@@ -90,7 +90,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		});
 		this.scheduledExtractorInvoker.addTarget(new targets.LambdaFunction(this.activeRepoExtractorLambda));
 
-		const repoAnalyzerDir = "/tmp/lambda-src/repo-analyzer";
+		const repoAnalyzerDir = "lambda-src/repo-analyzer";
 		if (process.env.NODE_ENV !== "production") {
 			execFileSync("rm", ["-rf", repoAnalyzerDir]);
 			mkdirSync(repoAnalyzerDir, { recursive: true });
