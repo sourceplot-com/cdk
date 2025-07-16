@@ -1,4 +1,5 @@
 import * as cdk from "aws-cdk-lib";
+import { jenkinsArtifactsBounds } from "aws-cdk-lib/aws-codepipeline-actions";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
@@ -7,7 +8,7 @@ import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import { execFileSync } from "child_process";
 import { Construct } from "constructs";
-import { mkdtempSync } from "fs";
+import { mkdirSync } from "fs";
 import path from "path";
 
 export class GithubDataExtractorStack extends cdk.Stack {
@@ -40,8 +41,6 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			removalPolicy: cdk.RemovalPolicy.RETAIN
 		});
 
-		const tmpDir = mkdtempSync("/tmp/sourceplot-lambda-code");
-
 		// Active repo pipeline
 		this.activeRepoQueueDlq = new sqs.Queue(this, "ActiveRepoQueueDLQ", {
 			queueName: "active-repo-queue-dlq",
@@ -59,8 +58,13 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			removalPolicy: cdk.RemovalPolicy.RETAIN
 		});
 
-		const activeRepoExtractorDir = path.join(tmpDir, "active-repo-extractor");
-		execFileSync("git", ["clone", "https://github.com/sourceplot-com/active-repo-extractor-lambda.git", activeRepoExtractorDir]);
+		const activeRepoExtractorDir = "lambda-src/active-repo-extractor";
+		if (process.env.NODE_ENV !== "production") {
+			execFileSync("rm", ["-rf", activeRepoExtractorDir]);
+			mkdirSync(activeRepoExtractorDir, { recursive: true });
+			execFileSync("git", ["clone", "https://github.com/sourceplot-com/active-repo-extractor-lambda.git", activeRepoExtractorDir]);
+		}
+
 		this.activeRepoExtractorLambda = new lambda.Function(this, "ActiveRepoExtractorLambda", {
 			functionName: "sourceplot-active-repo-extractor",
 			runtime: lambda.Runtime.NODEJS_22_X,
@@ -90,8 +94,13 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		});
 		this.extractorCron.addTarget(new targets.LambdaFunction(this.activeRepoExtractorLambda));
 
-		const repoAnalyzerDir = path.join(tmpDir, "repo-analyzer");
-		execFileSync("git", ["clone", "https://github.com/sourceplot-com/repo-analyzer-lambda.git", repoAnalyzerDir]);
+		const repoAnalyzerDir = "lambda-src/repo-analyzer";
+		if (process.env.NODE_ENV !== "production") {
+			execFileSync("rm", ["-rf", repoAnalyzerDir]);
+			mkdirSync(repoAnalyzerDir, { recursive: true });
+			execFileSync("git", ["clone", "https://github.com/sourceplot-com/repo-analyzer-lambda.git", repoAnalyzerDir]);
+		}
+
 		this.repoAnalyzerLambda = new lambda.Function(this, "RepoAnalyzerLambda", {
 			functionName: "sourceplot-repo-analyzer",
 			runtime: lambda.Runtime.JAVA_21,
@@ -126,7 +135,5 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		this.activeRepoQueue.grantConsumeMessages(this.repoAnalyzerLambda);
 		this.repoStatsTable.grantReadWriteData(this.repoAnalyzerLambda);
 		this.aggregateStatsTable.grantReadWriteData(this.repoAnalyzerLambda);
-
-		execFileSync("rm", ["-rf", tmpDir]);
 	}
 }

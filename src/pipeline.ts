@@ -24,17 +24,24 @@ export class PipelineStack extends cdk.Stack {
 			input: pipelines.CodePipelineSource.connection("sourceplot-com/cdk", "main", {
 				connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
 			}),
-			commands: ["npm ci", "npm run build", "npm run cdk synth"],
+			commands: ["npm ci", "npm run build", "npm run synth"],
 			primaryOutputDirectory: "cdk.out",
 			env: {
 				DOCKER_BUILDKIT: "1"
+			},
+			additionalInputs: {
+				"lambda-src/activeRepoExtractorLambda": pipelines.CodePipelineSource.connection("sourceplot-com/active-repo-extractor-lambda", "main", {
+					connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
+				}),
+				"lambda-src/repoAnalyzerLambda": pipelines.CodePipelineSource.connection("sourceplot-com/repo-analyzer-lambda", "main", {
+					connectionArn: SOURCEPLOT_GITHUB_CONNECTION_ARN
+				})
 			}
 		});
 
 		return new pipelines.CodePipeline(this, "Pipeline", {
 			pipelineName: "sourceplot-pipeline",
 			dockerEnabledForSynth: true,
-			usePipelineRoleForActions: true,
 			synth,
 			codeBuildDefaults: {
 				buildEnvironment: {

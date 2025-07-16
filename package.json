@@ -8,6 +8,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "cdk": "cdk",
+    "synth": "NODE_ENV=production cdk synth",
     "prepare": "husky"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "lint-staged": "^16.1.2",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "~5.6.3"
   },
   "engines": {
