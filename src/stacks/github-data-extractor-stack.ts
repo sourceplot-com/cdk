@@ -1,14 +1,14 @@
 import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
-import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as targets from "aws-cdk-lib/aws-events-targets";
-import * as sqs from "aws-cdk-lib/aws-sqs";
-import { Construct } from "constructs";
+import * as lambda from "aws-cdk-lib/aws-lambda";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
-import path from "path";
+import * as sqs from "aws-cdk-lib/aws-sqs";
 import { execFileSync } from "child_process";
+import { Construct } from "constructs";
 import { mkdtempSync } from "fs";
+import path from "path";
 
 export class GithubDataExtractorStack extends cdk.Stack {
 	readonly activeRepoQueue: sqs.Queue;

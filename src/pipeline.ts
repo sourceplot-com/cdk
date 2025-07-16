@@ -1,11 +1,11 @@
-import * as cdk from "aws-cdk-lib";
-import * as pipelines from "aws-cdk-lib/pipelines";
-import * as codebuild from "aws-cdk-lib/aws-codebuild";
-import { Construct } from "constructs";
 import { PIPELINE_STAGES } from "./configuration/pipeline";
-import { GithubDataExtractorStack } from "./stacks/github-data-extractor-stack";
 import { Stack } from "./model/stack";
+import { GithubDataExtractorStack } from "./stacks/github-data-extractor-stack";
 import { WebsiteStack } from "./stacks/website-stack";
+import * as cdk from "aws-cdk-lib";
+import * as codebuild from "aws-cdk-lib/aws-codebuild";
+import * as pipelines from "aws-cdk-lib/pipelines";
+import { Construct } from "constructs";
 
 const SOURCEPLOT_GITHUB_CONNECTION_ARN = "arn:aws:codeconnections:us-east-1:939880360164:connection/1bf27e6f-7e8c-4e06-a9f2-fb069d81a17a";
 
@@ -32,9 +32,9 @@ export class PipelineStack extends cdk.Stack {
 		});
 
 		return new pipelines.CodePipeline(this, "Pipeline", {
+			pipelineName: "sourceplot-pipeline",
 			dockerEnabledForSynth: true,
 			usePipelineRoleForActions: true,
-			pipelineName: "sourceplot-pipeline",
 			synth,
 			codeBuildDefaults: {
 				buildEnvironment: {

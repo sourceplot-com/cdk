@@ -1,7 +1,7 @@
-import { AWS_ACCOUNT_ID } from "./account";
-import { AwsRegion } from "../model/region";
-import { Stage } from "../model/stage";
-import { Stack } from "../model/stack";
+import { AWS_ACCOUNT_ID } from "~/configuration/account";
+import { AwsRegion } from "~/model/region";
+import { Stack } from "~/model/stack";
+import { Stage } from "~/model/stage";
 
 export interface StageEnvironment {
 	accountId: string;
