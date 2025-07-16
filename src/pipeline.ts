@@ -40,7 +40,7 @@ export class PipelineStack extends cdk.Stack {
 			}
 		});
 
-		const pipeline = new pipelines.CodePipeline(this, "Pipeline", {
+		return new pipelines.CodePipeline(this, "Pipeline", {
 			pipelineName: "sourceplot-pipeline",
 			dockerEnabledForSynth: true,
 			usePipelineRoleForActions: true,
@@ -53,13 +53,6 @@ export class PipelineStack extends cdk.Stack {
 				}
 			}
 		});
-		pipeline.pipeline.addToRolePolicy(
-			new iam.PolicyStatement({
-				actions: ["codebuild:*"],
-				resources: ["*"]
-			})
-		);
-		return pipeline;
 	}
 
 	private addDeploymentStages(): void {
