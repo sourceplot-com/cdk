@@ -4,6 +4,7 @@ import { GithubDataExtractorStack } from "./stacks/github-data-extractor-stack";
 import { WebsiteStack } from "./stacks/website-stack";
 import * as cdk from "aws-cdk-lib";
 import * as codebuild from "aws-cdk-lib/aws-codebuild";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as pipelines from "aws-cdk-lib/pipelines";
 import { Construct } from "constructs";
 
@@ -39,9 +40,10 @@ export class PipelineStack extends cdk.Stack {
 			}
 		});
 
-		return new pipelines.CodePipeline(this, "Pipeline", {
+		const pipeline = new pipelines.CodePipeline(this, "Pipeline", {
 			pipelineName: "sourceplot-pipeline",
 			dockerEnabledForSynth: true,
+			usePipelineRoleForActions: true,
 			synth,
 			codeBuildDefaults: {
 				buildEnvironment: {
@@ -51,6 +53,13 @@ export class PipelineStack extends cdk.Stack {
 				}
 			}
 		});
+		pipeline.pipeline.addToRolePolicy(
+			new iam.PolicyStatement({
+				actions: ["codebuild:*"],
+				resources: ["*"]
+			})
+		);
+		return pipeline;
 	}
 
 	private addDeploymentStages(): void {
