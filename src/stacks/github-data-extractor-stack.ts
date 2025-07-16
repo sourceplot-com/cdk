@@ -15,7 +15,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 	readonly activeRepoQueue: sqs.Queue;
 	readonly activeRepoQueueDlq: sqs.Queue;
 	readonly activeRepoExtractorLambda: lambda.Function;
-	readonly extractorCron: events.Rule;
+	readonly scheduledExtractorInvoker: events.Rule;
 	readonly repoAnalyzerLambda: lambda.Function;
 	readonly repoStatsTable: dynamodb.TableV2;
 	readonly aggregateStatsTable: dynamodb.TableV2;
@@ -83,16 +83,12 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			}
 		});
 		this.activeRepoQueue.grantSendMessages(this.activeRepoExtractorLambda);
-		this.extractorCron = new events.Rule(this, "ExtractorCron", {
+		this.scheduledExtractorInvoker = new events.Rule(this, "ExtractorCron", {
 			ruleName: "sourceplot-active-repo-extractor-cron",
-			schedule: events.Schedule.cron({
-				day: "0",
-				hour: "1",
-				minute: "0"
-			}),
+			schedule: events.Schedule.rate(cdk.Duration.hours(1)),
 			enabled: false
 		});
-		this.extractorCron.addTarget(new targets.LambdaFunction(this.activeRepoExtractorLambda));
+		this.scheduledExtractorInvoker.addTarget(new targets.LambdaFunction(this.activeRepoExtractorLambda));
 
 		const repoAnalyzerDir = "lambda-src/repo-analyzer";
 		if (process.env.NODE_ENV !== "production") {
