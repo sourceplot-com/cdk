@@ -1,5 +1,4 @@
 import * as cdk from "aws-cdk-lib";
-import { jenkinsArtifactsBounds } from "aws-cdk-lib/aws-codepipeline-actions";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
@@ -9,14 +8,16 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import { execFileSync } from "child_process";
 import { Construct } from "constructs";
 import { mkdirSync } from "fs";
-import path from "path";
 
 export class GithubDataExtractorStack extends cdk.Stack {
 	readonly activeRepoQueue: sqs.Queue;
 	readonly activeRepoQueueDlq: sqs.Queue;
+
 	readonly activeRepoExtractorLambda: lambda.Function;
-	readonly scheduledExtractorInvoker: events.Rule;
 	readonly repoAnalyzerLambda: lambda.Function;
+
+	readonly scheduledExtractorInvoker: events.Rule;
+
 	readonly repoStatsTable: dynamodb.TableV2;
 	readonly aggregateStatsTable: dynamodb.TableV2;
 
@@ -49,7 +50,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		});
 		this.activeRepoQueue = new sqs.Queue(this, "ActiveRepoQueue", {
 			queueName: "active-repo-queue",
-			visibilityTimeout: cdk.Duration.minutes(15),
+			visibilityTimeout: cdk.Duration.minutes(5),
 			retentionPeriod: cdk.Duration.days(14),
 			deadLetterQueue: {
 				queue: this.activeRepoQueueDlq,
@@ -69,6 +70,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			functionName: "sourceplot-active-repo-extractor",
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: "main.handler",
+			timeout: cdk.Duration.seconds(30),
 			code: lambda.Code.fromAsset(activeRepoExtractorDir, {
 				bundling: {
 					image: lambda.Runtime.NODEJS_22_X.bundlingImage,
@@ -101,6 +103,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			functionName: "sourceplot-repo-analyzer",
 			runtime: lambda.Runtime.JAVA_21,
 			handler: "com.sourceplot.handler.RepoAnalysisHandler::handleRequest",
+			timeout: cdk.Duration.minutes(5),
 			code: lambda.Code.fromAsset(repoAnalyzerDir, {
 				bundling: {
 					image: lambda.Runtime.JAVA_21.bundlingImage,
