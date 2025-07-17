@@ -103,16 +103,14 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			functionName: "sourceplot-repo-analyzer",
 			runtime: lambda.Runtime.JAVA_21,
 			handler: "com.sourceplot.handler.RepoAnalysisHandler::handleRequest",
-			timeout: cdk.Duration.minutes(5),
+			timeout: cdk.Duration.minutes(10),
 			code: lambda.Code.fromAsset(repoAnalyzerDir, {
 				bundling: {
 					image: lambda.Runtime.JAVA_21.bundlingImage,
 					command: [
 						"/bin/bash",
 						"-c",
-						["cd /asset-input", "./gradlew shadowJar -x test --no-daemon", "cp build/libs/*.jar /asset-output/", "ls -la /asset-output/"].join(
-							" && "
-						)
+						["./gradlew shadowJar -x test --no-daemon --parallel --build-cache", "cp build/libs/*.jar /asset-output/"].join(" && ")
 					],
 					outputType: cdk.BundlingOutput.ARCHIVED,
 					user: "root"
