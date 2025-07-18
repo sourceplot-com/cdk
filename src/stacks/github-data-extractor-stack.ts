@@ -120,7 +120,9 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			environment: {
 				REPO_STATS_TABLE: this.repoStatsTable.tableName,
 				REPO_STATS_TABLE_DATE_INDEX: "DateIndex",
-				AGGREGATE_STATS_TABLE: this.aggregateStatsTable.tableName
+				AGGREGATE_STATS_TABLE: this.aggregateStatsTable.tableName,
+				POWERTOOLS_SERVICE_NAME: "repo-analyzer",
+				POWERTOOLS_METRICS_NAMESPACE: "sourceplot"
 			}
 		});
 		this.repoAnalyzerLambda.role?.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
