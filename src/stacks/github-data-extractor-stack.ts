@@ -2,6 +2,7 @@ import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
 import * as targets from "aws-cdk-lib/aws-events-targets";
+import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import * as sqs from "aws-cdk-lib/aws-sqs";
@@ -122,6 +123,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 				AGGREGATE_STATS_TABLE: this.aggregateStatsTable.tableName
 			}
 		});
+		this.repoAnalyzerLambda.role?.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
 		this.repoAnalyzerLambda.addEventSource(
 			new SqsEventSource(this.activeRepoQueue, {
 				batchSize: 100,
