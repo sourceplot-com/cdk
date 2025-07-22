@@ -22,6 +22,8 @@ export class GithubDataExtractorStack extends cdk.Stack {
 	readonly repoStatsTable: dynamodb.TableV2;
 	readonly aggregateStatsTable: dynamodb.TableV2;
 
+	private readonly MAX_MESSAGES_PER_BATCH = 10;
+
 	constructor(scope: Construct, id: string, props?: cdk.StackProps) {
 		super(scope, id, props);
 
@@ -128,8 +130,8 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		this.repoAnalyzerLambda.role?.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
 		this.repoAnalyzerLambda.addEventSource(
 			new SqsEventSource(this.activeRepoQueue, {
-				batchSize: 100,
-				maxBatchingWindow: cdk.Duration.seconds(10),
+				batchSize: this.MAX_MESSAGES_PER_BATCH,
+				maxBatchingWindow: cdk.Duration.seconds(5),
 				reportBatchItemFailures: true
 			})
 		);
