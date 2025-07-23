@@ -9,6 +9,12 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import { execFileSync } from "child_process";
 import { Construct } from "constructs";
 import { mkdirSync } from "fs";
+import {
+	ACTIVE_REPOSITORIES_PER_MESSAGE,
+	MESSAGES_TO_PROCESS_CONCURRENTLY,
+	MESSAGES_TO_PROCESS_PER_LAMBDA,
+	REPOSITORIES_TO_PROCESS_PER_LAMBDA
+} from "src/configuration/github";
 
 export class GithubDataExtractorStack extends cdk.Stack {
 	readonly activeRepoQueue: sqs.Queue;
@@ -21,8 +27,6 @@ export class GithubDataExtractorStack extends cdk.Stack {
 
 	readonly repoStatsTable: dynamodb.TableV2;
 	readonly aggregateStatsTable: dynamodb.TableV2;
-
-	private readonly MAX_MESSAGES_PER_BATCH = 10;
 
 	constructor(scope: Construct, id: string, props?: cdk.StackProps) {
 		super(scope, id, props);
@@ -84,7 +88,9 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			}),
 			environment: {
 				ACTIVE_REPO_QUEUE_NAME: this.activeRepoQueue.queueName,
-				ACTIVE_REPO_QUEUE_URL: this.activeRepoQueue.queueUrl
+				ACTIVE_REPO_QUEUE_URL: this.activeRepoQueue.queueUrl,
+
+				ACTIVE_REPOSITORIES_PER_MESSAGE: ACTIVE_REPOSITORIES_PER_MESSAGE.toString()
 			}
 		});
 		this.activeRepoQueue.grantSendMessages(this.activeRepoExtractorLambda);
@@ -107,6 +113,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			runtime: lambda.Runtime.JAVA_21,
 			handler: "com.sourceplot.handler.RepoAnalysisHandler::handleRequest",
 			timeout: cdk.Duration.minutes(10),
+			memorySize: 512,
 			code: lambda.Code.fromAsset(repoAnalyzerDir, {
 				bundling: {
 					image: lambda.Runtime.JAVA_21.bundlingImage,
@@ -120,17 +127,23 @@ export class GithubDataExtractorStack extends cdk.Stack {
 				}
 			}),
 			environment: {
+				POWERTOOLS_SERVICE_NAME: "repo-analyzer",
+				POWERTOOLS_METRICS_NAMESPACE: "sourceplot",
+
 				REPO_STATS_TABLE: this.repoStatsTable.tableName,
 				REPO_STATS_TABLE_DATE_INDEX: "DateIndex",
 				AGGREGATE_STATS_TABLE: this.aggregateStatsTable.tableName,
-				POWERTOOLS_SERVICE_NAME: "repo-analyzer",
-				POWERTOOLS_METRICS_NAMESPACE: "sourceplot"
+
+				ACTIVE_REPOSITORIES_PER_MESSAGE: ACTIVE_REPOSITORIES_PER_MESSAGE.toString(),
+				REPOSITORIES_TO_PROCESS_PER_LAMBDA: REPOSITORIES_TO_PROCESS_PER_LAMBDA.toString(),
+				MESSAGES_TO_PROCESS_PER_LAMBDA: MESSAGES_TO_PROCESS_PER_LAMBDA.toString(),
+				MESSAGES_TO_PROCESS_CONCURRENTLY: MESSAGES_TO_PROCESS_CONCURRENTLY.toString()
 			}
 		});
 		this.repoAnalyzerLambda.role?.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AWSXRayDaemonWriteAccess"));
 		this.repoAnalyzerLambda.addEventSource(
 			new SqsEventSource(this.activeRepoQueue, {
-				batchSize: this.MAX_MESSAGES_PER_BATCH,
+				batchSize: MESSAGES_TO_PROCESS_PER_LAMBDA,
 				maxBatchingWindow: cdk.Duration.seconds(5),
 				reportBatchItemFailures: true
 			})
