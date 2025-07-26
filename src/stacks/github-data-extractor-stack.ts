@@ -58,7 +58,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		});
 		this.activeRepoQueue = new sqs.Queue(this, "ActiveRepoQueue", {
 			queueName: "active-repo-queue",
-			visibilityTimeout: cdk.Duration.minutes(5),
+			visibilityTimeout: cdk.Duration.minutes(20),
 			retentionPeriod: cdk.Duration.days(14),
 			deadLetterQueue: {
 				queue: this.activeRepoQueueDlq,
