@@ -1,3 +1,10 @@
+import {
+	ACTIVE_REPOSITORIES_PER_MESSAGE,
+	LAMBDA_ALLOCATED_MEMORY,
+	MESSAGES_TO_PROCESS_PER_LAMBDA,
+	REPOSITORIES_TO_PROCESS_PER_LAMBDA,
+	MESSAGES_TO_PROCESS_CONCURRENTLY
+} from "../configuration/github";
 import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as events from "aws-cdk-lib/aws-events";
@@ -9,12 +16,6 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import { execFileSync } from "child_process";
 import { Construct } from "constructs";
 import { mkdirSync } from "fs";
-import {
-	ACTIVE_REPOSITORIES_PER_MESSAGE,
-	MESSAGES_TO_PROCESS_CONCURRENTLY,
-	MESSAGES_TO_PROCESS_PER_LAMBDA,
-	REPOSITORIES_TO_PROCESS_PER_LAMBDA
-} from "src/configuration/github";
 
 export class GithubDataExtractorStack extends cdk.Stack {
 	readonly activeRepoQueue: sqs.Queue;
@@ -78,6 +79,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			runtime: lambda.Runtime.NODEJS_22_X,
 			handler: "main.handler",
 			timeout: cdk.Duration.seconds(30),
+			architecture: lambda.Architecture.ARM_64,
 			code: lambda.Code.fromAsset(activeRepoExtractorDir, {
 				bundling: {
 					image: lambda.Runtime.NODEJS_22_X.bundlingImage,
@@ -113,7 +115,8 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			runtime: lambda.Runtime.JAVA_21,
 			handler: "com.sourceplot.handler.RepoAnalysisHandler::handleRequest",
 			timeout: cdk.Duration.minutes(10),
-			memorySize: 512,
+			memorySize: LAMBDA_ALLOCATED_MEMORY,
+			architecture: lambda.Architecture.ARM_64,
 			code: lambda.Code.fromAsset(repoAnalyzerDir, {
 				bundling: {
 					image: lambda.Runtime.JAVA_21.bundlingImage,
