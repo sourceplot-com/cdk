@@ -28,12 +28,19 @@ export class GithubDataExtractorStack extends cdk.Stack {
 	readonly scheduledExtractorInvoker: events.Rule;
 
 	readonly repoStatsBucket: s3.Bucket;
+	readonly dailyStatsBucket: s3.Bucket;
 
 	constructor(scope: Construct, id: string, props?: cdk.StackProps) {
 		super(scope, id, props);
 
 		this.repoStatsBucket = new s3.Bucket(this, "RepoStatsBucket", {
 			bucketName: "sourceplot-repo-stats",
+			removalPolicy: cdk.RemovalPolicy.RETAIN,
+			blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+			versioned: false
+		});
+		this.dailyStatsBucket = new s3.Bucket(this, "DailyStatsBucket", {
+			bucketName: "sourceplot-daily-stats",
 			removalPolicy: cdk.RemovalPolicy.RETAIN,
 			blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
 			versioned: false
@@ -139,5 +146,6 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		);
 		this.activeRepoQueue.grantConsumeMessages(this.repoAnalyzerLambda);
 		this.repoStatsBucket.grantReadWrite(this.repoAnalyzerLambda);
+		this.dailyStatsBucket.grantReadWrite(this.repoAnalyzerLambda);
 	}
 }
