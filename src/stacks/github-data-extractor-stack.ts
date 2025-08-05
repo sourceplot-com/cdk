@@ -12,6 +12,7 @@ import * as targets from "aws-cdk-lib/aws-events-targets";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
+import * as s3 from "aws-cdk-lib/aws-s3";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import { execFileSync } from "child_process";
 import { Construct } from "constructs";
@@ -26,31 +27,18 @@ export class GithubDataExtractorStack extends cdk.Stack {
 
 	readonly scheduledExtractorInvoker: events.Rule;
 
-	readonly repoStatsTable: dynamodb.TableV2;
-	readonly aggregateStatsTable: dynamodb.TableV2;
+	readonly repoStatsBucket: s3.Bucket;
 
 	constructor(scope: Construct, id: string, props?: cdk.StackProps) {
 		super(scope, id, props);
 
-		// DDB tables
-		this.repoStatsTable = new dynamodb.TableV2(this, "RepoStatsTable", {
-			tableName: "sourceplot-repo-stats",
-			partitionKey: { name: "repo", type: dynamodb.AttributeType.STRING },
-			sortKey: { name: "date", type: dynamodb.AttributeType.STRING },
-			removalPolicy: cdk.RemovalPolicy.RETAIN
-		});
-		this.repoStatsTable.addGlobalSecondaryIndex({
-			indexName: "DateIndex",
-			partitionKey: { name: "date", type: dynamodb.AttributeType.STRING },
-			sortKey: { name: "repo", type: dynamodb.AttributeType.STRING }
-		});
-		this.aggregateStatsTable = new dynamodb.TableV2(this, "DailyLanguageStatsTable", {
-			tableName: "sourceplot-aggregate-stats",
-			partitionKey: { name: "date", type: dynamodb.AttributeType.STRING },
-			removalPolicy: cdk.RemovalPolicy.RETAIN
+		this.repoStatsBucket = new s3.Bucket(this, "RepoStatsBucket", {
+			bucketName: "sourceplot-repo-stats",
+			removalPolicy: cdk.RemovalPolicy.RETAIN,
+			blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+			versioned: false
 		});
 
-		// Active repo pipeline
 		this.activeRepoQueueDlq = new sqs.Queue(this, "ActiveRepoQueueDLQ", {
 			queueName: "active-repo-queue-dlq",
 			retentionPeriod: cdk.Duration.days(14),
@@ -133,9 +121,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 				POWERTOOLS_SERVICE_NAME: "repo-analyzer",
 				POWERTOOLS_METRICS_NAMESPACE: "sourceplot",
 
-				REPO_STATS_TABLE: this.repoStatsTable.tableName,
-				REPO_STATS_TABLE_DATE_INDEX: "DateIndex",
-				AGGREGATE_STATS_TABLE: this.aggregateStatsTable.tableName,
+				REPO_STATS_BUCKET_NAME: this.repoStatsBucket.bucketName,
 
 				ACTIVE_REPOSITORIES_PER_MESSAGE: ACTIVE_REPOSITORIES_PER_MESSAGE.toString(),
 				REPOSITORIES_TO_PROCESS_PER_LAMBDA: REPOSITORIES_TO_PROCESS_PER_LAMBDA.toString(),
@@ -152,7 +138,6 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			})
 		);
 		this.activeRepoQueue.grantConsumeMessages(this.repoAnalyzerLambda);
-		this.repoStatsTable.grantReadWriteData(this.repoAnalyzerLambda);
-		this.aggregateStatsTable.grantReadWriteData(this.repoAnalyzerLambda);
+		this.repoStatsBucket.grantReadWrite(this.repoAnalyzerLambda);
 	}
 }
