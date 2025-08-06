@@ -37,7 +37,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			bucketName: "sourceplot-repo-stats",
 			removalPolicy: cdk.RemovalPolicy.RETAIN,
 			blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-			versioned: false
+			versioned: true
 		});
 		this.dailyStatsBucket = new s3.Bucket(this, "DailyStatsBucket", {
 			bucketName: "sourceplot-daily-stats",
