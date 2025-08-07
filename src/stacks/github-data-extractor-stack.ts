@@ -27,17 +27,23 @@ export class GithubDataExtractorStack extends cdk.Stack {
 
 	readonly scheduledExtractorInvoker: events.Rule;
 
-	readonly repoDataBucket: s3.Bucket;
+	readonly repoDataTable: dynamodb.TableV2;
 	readonly dailyStatsBucket: s3.Bucket;
 
 	constructor(scope: Construct, id: string, props?: cdk.StackProps) {
 		super(scope, id, props);
 
-		this.repoDataBucket = new s3.Bucket(this, "RepoDataBucket", {
-			bucketName: "sourceplot-repo-data",
-			removalPolicy: cdk.RemovalPolicy.RETAIN,
-			blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-			versioned: true
+		this.repoDataTable = new dynamodb.TableV2(this, "RepoDataTable", {
+			tableName: "sourceplot-repo-data",
+			partitionKey: {
+				name: "repositoryName",
+				type: dynamodb.AttributeType.STRING
+			},
+			billing: dynamodb.Billing.provisioned({
+				readCapacity: dynamodb.Capacity.fixed(25),
+				writeCapacity: dynamodb.Capacity.fixed(25)
+			}),
+			removalPolicy: cdk.RemovalPolicy.RETAIN
 		});
 		this.dailyStatsBucket = new s3.Bucket(this, "DailyStatsBucket", {
 			bucketName: "sourceplot-daily-stats",
@@ -128,7 +134,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 				POWERTOOLS_SERVICE_NAME: "repo-analyzer",
 				POWERTOOLS_METRICS_NAMESPACE: "sourceplot",
 
-				REPO_DATA_BUCKET_NAME: this.repoDataBucket.bucketName,
+				REPO_DATA_TABLE_NAME: this.repoDataTable.tableName,
 
 				ACTIVE_REPOSITORIES_PER_MESSAGE: ACTIVE_REPOSITORIES_PER_MESSAGE.toString(),
 				REPOSITORIES_TO_PROCESS_PER_LAMBDA: REPOSITORIES_TO_PROCESS_PER_LAMBDA.toString(),
@@ -145,7 +151,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			})
 		);
 		this.activeRepoQueue.grantConsumeMessages(this.repoAnalyzerLambda);
-		this.repoDataBucket.grantReadWrite(this.repoAnalyzerLambda);
+		this.repoDataTable.grantReadWriteData(this.repoAnalyzerLambda);
 		this.dailyStatsBucket.grantReadWrite(this.repoAnalyzerLambda);
 	}
 }
