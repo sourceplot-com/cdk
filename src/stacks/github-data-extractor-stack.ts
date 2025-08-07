@@ -27,14 +27,14 @@ export class GithubDataExtractorStack extends cdk.Stack {
 
 	readonly scheduledExtractorInvoker: events.Rule;
 
-	readonly repoStatsBucket: s3.Bucket;
+	readonly repoDataBucket: s3.Bucket;
 	readonly dailyStatsBucket: s3.Bucket;
 
 	constructor(scope: Construct, id: string, props?: cdk.StackProps) {
 		super(scope, id, props);
 
-		this.repoStatsBucket = new s3.Bucket(this, "RepoStatsBucket", {
-			bucketName: "sourceplot-repo-stats",
+		this.repoDataBucket = new s3.Bucket(this, "RepoDataBucket", {
+			bucketName: "sourceplot-repo-data",
 			removalPolicy: cdk.RemovalPolicy.RETAIN,
 			blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
 			versioned: true
@@ -128,7 +128,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 				POWERTOOLS_SERVICE_NAME: "repo-analyzer",
 				POWERTOOLS_METRICS_NAMESPACE: "sourceplot",
 
-				REPO_STATS_BUCKET_NAME: this.repoStatsBucket.bucketName,
+				REPO_DATA_BUCKET_NAME: this.repoDataBucket.bucketName,
 
 				ACTIVE_REPOSITORIES_PER_MESSAGE: ACTIVE_REPOSITORIES_PER_MESSAGE.toString(),
 				REPOSITORIES_TO_PROCESS_PER_LAMBDA: REPOSITORIES_TO_PROCESS_PER_LAMBDA.toString(),
@@ -145,7 +145,7 @@ export class GithubDataExtractorStack extends cdk.Stack {
 			})
 		);
 		this.activeRepoQueue.grantConsumeMessages(this.repoAnalyzerLambda);
-		this.repoStatsBucket.grantReadWrite(this.repoAnalyzerLambda);
+		this.repoDataBucket.grantReadWrite(this.repoAnalyzerLambda);
 		this.dailyStatsBucket.grantReadWrite(this.repoAnalyzerLambda);
 	}
 }
