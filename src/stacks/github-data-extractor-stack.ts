@@ -27,22 +27,20 @@ export class GithubDataExtractorStack extends cdk.Stack {
 
 	readonly scheduledExtractorInvoker: events.Rule;
 
-	readonly repoDataTable: dynamodb.TableV2;
+	readonly repoDataTable: dynamodb.Table;
 	readonly dailyStatsBucket: s3.Bucket;
 
 	constructor(scope: Construct, id: string, props?: cdk.StackProps) {
 		super(scope, id, props);
 
-		this.repoDataTable = new dynamodb.TableV2(this, "RepoDataTable", {
+		this.repoDataTable = new dynamodb.Table(this, "RepoDataTable", {
 			tableName: "sourceplot-repo-data",
 			partitionKey: {
 				name: "repositoryName",
 				type: dynamodb.AttributeType.STRING
 			},
-			billing: dynamodb.Billing.provisioned({
-				readCapacity: dynamodb.Capacity.fixed(25),
-				writeCapacity: dynamodb.Capacity.fixed(25)
-			}),
+			readCapacity: 25,
+			writeCapacity: 25,
 			removalPolicy: cdk.RemovalPolicy.RETAIN
 		});
 		this.dailyStatsBucket = new s3.Bucket(this, "DailyStatsBucket", {
