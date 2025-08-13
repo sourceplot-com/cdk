@@ -13,6 +13,7 @@ import * as iam from "aws-cdk-lib/aws-iam";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import * as sqs from "aws-cdk-lib/aws-sqs";
 import { execFileSync } from "child_process";
 import { Construct } from "constructs";
@@ -30,6 +31,10 @@ export class GithubDataExtractorStack extends cdk.Stack {
 	readonly repoDataTable: dynamodb.Table;
 	readonly dailyStatsBucket: s3.Bucket;
 
+	readonly githubAppCredentials: secretsmanager.Secret[];
+	readonly githubAppCredentialsLocksTable: dynamodb.TableV2;
+	private static readonly GITHUB_APP_COUNT = 20;
+
 	constructor(scope: Construct, id: string, props?: cdk.StackProps) {
 		super(scope, id, props);
 
@@ -39,8 +44,8 @@ export class GithubDataExtractorStack extends cdk.Stack {
 				name: "repositoryName",
 				type: dynamodb.AttributeType.STRING
 			},
-			readCapacity: 25,
-			writeCapacity: 25,
+			readCapacity: 22,
+			writeCapacity: 22,
 			removalPolicy: cdk.RemovalPolicy.RETAIN
 		});
 		this.dailyStatsBucket = new s3.Bucket(this, "DailyStatsBucket", {
@@ -151,5 +156,23 @@ export class GithubDataExtractorStack extends cdk.Stack {
 		this.activeRepoQueue.grantConsumeMessages(this.repoAnalyzerLambda);
 		this.repoDataTable.grantReadWriteData(this.repoAnalyzerLambda);
 		this.dailyStatsBucket.grantReadWrite(this.repoAnalyzerLambda);
+
+		for (let i = 1; i <= GithubDataExtractorStack.GITHUB_APP_COUNT; i++) {
+			const secret = new secretsmanager.Secret(this, `GithubAppCredentials${i}`, {
+				secretName: `sourceplot-github-app-credentials-${i}`,
+				removalPolicy: cdk.RemovalPolicy.RETAIN
+			});
+			secret.grantRead(this.repoAnalyzerLambda);
+			this.githubAppCredentials.push(secret);
+		}
+		this.githubAppCredentialsLocksTable = new dynamodb.TableV2(this, "GithubAppCredentialsLocksTable", {
+			tableName: "sourceplot-github-app-credentials-locks",
+			partitionKey: {
+				name: "secretName",
+				type: dynamodb.AttributeType.STRING
+			},
+			removalPolicy: cdk.RemovalPolicy.RETAIN
+		});
+		this.githubAppCredentialsLocksTable.grantReadWriteData(this.repoAnalyzerLambda);
 	}
 }
